@@ -1,13 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { signInWithEmailAndPassword } from "firebase/auth"
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth"
 import { auth } from "@/lib/firebase"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+
 
 export function LoginForm() {
     const router = useRouter()
@@ -25,6 +26,17 @@ export function LoginForm() {
         } catch (err: any) {
             console.error("Login error:", err)
             setError("Invalid email or password.")
+        }
+    }
+
+    const handleGoogleLogin = async () => {
+        try {
+            const provider = new GoogleAuthProvider()
+            await signInWithPopup(auth, provider)
+            router.push("/")
+        } catch (err) {
+            console.error("Google sign-in error:", err)
+            setError("Google login failed.")
         }
     }
 
@@ -49,6 +61,11 @@ export function LoginForm() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                 />
+            </div>
+            <div>
+                <Button type="button" variant="outline" className="w-full" onClick={handleGoogleLogin}>
+                    Sign in with Google
+                </Button>
             </div>
             <Button type="submit" className="w-full">
                 Log In

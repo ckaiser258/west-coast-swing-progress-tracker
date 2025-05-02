@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { createUserWithEmailAndPassword } from "firebase/auth"
+import { createUserWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth"
 import { auth } from "@/lib/firebase"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -26,6 +26,17 @@ export function SignUpForm() {
         }
     }
 
+    const handleGoogleLogin = async () => {
+        try {
+            const provider = new GoogleAuthProvider()
+            await signInWithPopup(auth, provider)
+            router.push("/")
+        } catch (err) {
+            console.error("Google sign-in error:", err)
+            setError("Google login failed.")
+        }
+    }
+
     return (
         <form onSubmit={handleSubmit} className="space-y-4 max-w-sm">
             <div>
@@ -47,6 +58,11 @@ export function SignUpForm() {
                     onChange={(e) => setPassword(e.target.value)}
                     required
                 />
+            </div>
+            <div>
+                <Button type="button" variant="outline" className="w-full" onClick={handleGoogleLogin}>
+                    Sign in with Google
+                </Button>
             </div>
             <Button type="submit">Sign Up</Button>
             {error && <p className="text-red-500 text-sm">{error}</p>}
