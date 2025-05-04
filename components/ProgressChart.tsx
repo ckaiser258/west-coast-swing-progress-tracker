@@ -25,6 +25,16 @@ export function ProgressChart() {
     const { user } = useAuth()
     const [data, setData] = useState<any[]>([])
 
+    const skillColors: Record<string, string> = {
+        posture: "#6366F1",     // Indigo
+        timing: "#10B981",      // Emerald
+        connection: "#F59E0B",  // Amber
+        patterns: "#3B82F6",    // Blue
+        musicality: "#EC4899",  // Pink
+        anchor: "#8B5CF6",      // Violet
+        center: "#EF4444",      // Red
+    }
+
     useEffect(() => {
         if (!user) return
 
@@ -73,9 +83,10 @@ export function ProgressChart() {
                                 key={key}
                                 type="monotone"
                                 dataKey={key}
-                                stroke="#8884d8"
+                                stroke={skillColors[key] || "#8884d8"}
                                 strokeWidth={2}
                                 dot={{ r: 2 }}
+                                activeDot={{ r: 4 }}
                             />
                         ))}
                     </LineChart>
