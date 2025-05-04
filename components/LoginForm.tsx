@@ -1,13 +1,14 @@
 "use client"
 
 import { useState } from "react"
-import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup } from "firebase/auth"
-import { auth } from "@/lib/firebase"
+import { signInWithEmailAndPassword, GoogleAuthProvider, signInWithPopup, updateProfile } from "firebase/auth"
+import { auth, db } from "@/lib/firebase"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
+import { doc, getDoc, setDoc } from "firebase/firestore"
 
 
 export function LoginForm() {
@@ -32,7 +33,32 @@ export function LoginForm() {
     const handleGoogleLogin = async () => {
         try {
             const provider = new GoogleAuthProvider()
-            await signInWithPopup(auth, provider)
+            const result = await signInWithPopup(auth, provider)
+            const user = result.user
+
+            const userDoc = await getDoc(doc(db, "users", user.uid))
+            const displayNameExists = user.displayName && user.displayName.trim().length > 0
+            const firestoreHasDisplayName = userDoc.exists() && userDoc.data()?.displayName
+
+            if (!displayNameExists || !firestoreHasDisplayName) {
+                const input = prompt("Enter a display name (this will be shown to other dancers):")
+                if (!input || input.trim().length === 0) {
+                    alert("Display name is required.")
+                    await auth.signOut()
+                    return
+                }
+
+                // Update Firebase Auth displayName
+                await updateProfile(user, { displayName: input })
+
+                // Update Firestore user document
+                await setDoc(doc(db, "users", user.uid), {
+                    uid: user.uid,
+                    email: user.email,
+                    displayName: input,
+                })
+            }
+
             router.push("/")
         } catch (err) {
             console.error("Google sign-in error:", err)
@@ -43,7 +69,7 @@ export function LoginForm() {
     return (
         <form onSubmit={handleSubmit} className="space-y-4 max-w-sm w-full">
             <div>
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email" className="mb-2">Email</Label>
                 <Input
                     id="email"
                     type="email"
@@ -53,7 +79,7 @@ export function LoginForm() {
                 />
             </div>
             <div>
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="mb-2">Password</Label>
                 <Input
                     id="password"
                     type="password"
