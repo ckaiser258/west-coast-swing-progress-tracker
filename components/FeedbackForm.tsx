@@ -127,6 +127,7 @@ export function FeedbackForm({ targetUserId }: { targetUserId: string }) {
                             onChange={(e) =>
                                 setScores((prev) => ({ ...prev, [id]: e.target.value }))
                             }
+                            className={errors[id] ? "border-red-500 focus-visible:ring-red-500" : ""}
                         />
 
                         {errors[id] && (
