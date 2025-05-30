@@ -4,10 +4,10 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
-import { Slider } from "@/components/ui/slider"
 import { useAuth } from "@/hooks/useAuth"
 import { db } from "@/lib/firebase"
 import { collection, addDoc, serverTimestamp } from "firebase/firestore"
+import { Input } from "./ui/input"
 
 const skillAreas = [
     {
@@ -65,18 +65,37 @@ const skillAreas = [
 
 export function FeedbackForm({ targetUserId }: { targetUserId: string }) {
     const { user } = useAuth()
-    const [scores, setScores] = useState<Record<string, number>>(
-        Object.fromEntries(skillAreas.map((area) => [area.id, 2])) // Default score = 2
+    const [scores, setScores] = useState<Record<string, string | number>>(
+        Object.fromEntries(skillAreas.map((area) => [area.id, ""]))
     )
+    const [errors, setErrors] = useState<Record<string, string>>({})
 
     const handleSubmit = async () => {
         if (!user) return
 
+        const newErrors: Record<string, string> = {}
+
+        for (const [key, val] of Object.entries(scores)) {
+            const num = Number(val)
+
+            if (val === "") {
+                newErrors[key] = "This field is required."
+            } else if (isNaN(num) || num < 1 || num > 3) {
+                newErrors[key] = "Score must be between 1 and 3."
+            }
+        }
+
+        setErrors(newErrors)
+
+        if (Object.keys(newErrors).length > 0) return
+
         try {
             await addDoc(collection(db, "feedback"), {
                 targetUserId,
-                submittedBy: user.uid, // stored but not shown
-                skillScores: scores,
+                submittedBy: user.uid,
+                skillScores: Object.fromEntries(
+                    Object.entries(scores).map(([k, v]) => [k, Number(v)])
+                ),
                 timestamp: serverTimestamp(),
             })
 
@@ -90,24 +109,33 @@ export function FeedbackForm({ targetUserId }: { targetUserId: string }) {
     return (
         <Card>
             <CardHeader>
-                <CardTitle>Submit Feedback</CardTitle>
+                <CardTitle>Submit Feedback (1-3)</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
                 {skillAreas.map(({ id, label, description, error }) => (
                     <div key={id} className="space-y-1">
                         <Label htmlFor={id}>{label}</Label>
                         <p className="text-sm text-muted-foreground">{description}</p>
-                        <Slider
+
+                        <Input
                             id={id}
                             min={1}
                             max={3}
                             step={1}
-                            value={[scores[id]]}
-                            onValueChange={(value) =>
-                                setScores((prev) => ({ ...prev, [id]: value[0] }))
+                            type="number"
+                            value={scores[id]}
+                            onChange={(e) =>
+                                setScores((prev) => ({ ...prev, [id]: e.target.value }))
                             }
                         />
-                        <p className="text-xs text-destructive italic">Common Novice Error: {error}</p>
+
+                        {errors[id] && (
+                            <p className="text-sm text-red-500">{errors[id]}</p>
+                        )}
+
+                        <p className="text-xs text-destructive italic">
+                            Common Novice Error: {error}
+                        </p>
                     </div>
                 ))}
                 <Button onClick={handleSubmit}>Submit Anonymously</Button>
