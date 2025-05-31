@@ -64,7 +64,7 @@ const skillAreas = [
 
 
 
-export function FeedbackForm({ targetUserId }: { targetUserId: string }) {
+export function LeaderFeedbackForm({ targetUserId }: { targetUserId: string }) {
     const { user } = useAuth()
     const [scores, setScores] = useState<Record<string, string | number>>(
         Object.fromEntries(skillAreas.map((area) => [area.id, ""]))
