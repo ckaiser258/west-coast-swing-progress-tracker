@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth"
 import { db } from "@/lib/firebase"
 import { collection, addDoc, serverTimestamp } from "firebase/firestore"
 import { Input } from "./ui/input"
+import { toast } from "sonner"
 
 const skillAreas = [
     {
@@ -87,7 +88,13 @@ export function FeedbackForm({ targetUserId }: { targetUserId: string }) {
 
         setErrors(newErrors)
 
-        if (Object.keys(newErrors).length > 0) return
+        if (Object.keys(newErrors).length > 0) {
+            toast.error("⚠️ There was a problem submitting your feedback", {
+                description: "Please fix the errors in the form.",
+                duration: 4000,
+            })
+            return
+        }
 
         try {
             await addDoc(collection(db, "feedback"), {
@@ -99,9 +106,17 @@ export function FeedbackForm({ targetUserId }: { targetUserId: string }) {
                 timestamp: serverTimestamp(),
             })
 
-            alert("Feedback submitted anonymously.")
+            // Reset form after successful submit
+            setScores(Object.fromEntries(skillAreas.map((area) => [area.id, ""])))
+            setErrors({})
+
+            toast.success("✅ Feedback submitted", {
+                description: "Thanks for helping someone grow. 🙌",
+                duration: 4000,
+            })
         } catch (err) {
             console.error("Error submitting feedback:", err)
+            toast.error("Something went wrong submitting feedback.")
         }
     }
 
